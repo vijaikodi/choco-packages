@@ -22,7 +22,7 @@ jobs:
         id: changed-folder
         run: |
           $changed_files = git diff-tree --no-commit-id --name-only -r ${{ github.sha }}
-          $package_folders = $changed_files | Where-Object { $_ -match '(.+)/tools/chocolateyInstall.ps1' } | ForEach-Object { $_ -replace '/tools/chocolateyInstall.ps1', '' }
+          $package_folders = $changed_files | Where-Object { $_ -match '(.+)/tools/chocolateyInstall.ps1' } | ForEach-Object { ($_ -split '/tools/')[0] }
           echo "PACKAGE_FOLDER=$($package_folders -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
@@ -30,11 +30,17 @@ jobs:
         run: |
           $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
           foreach ($folder in $folders) {
+            $nuspecFile = Get-ChildItem "$folder/*.nuspec" -ErrorAction SilentlyContinue
+            if ($nuspecFile -eq $null) {
+              Write-Host "Skipping $folder - No .nuspec file found."
+              continue
+            }
+
             Write-Host "Processing package in: $folder"
             Set-Location $folder
-            choco pack
+            choco pack $nuspecFile.FullName
             choco push *.nupkg --source "https://nuget.pkg.github.com/vijaikodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
             Remove-Item -Path *.nupkg -Force
-            Set-Location ..
+            Set-Location $env:GITHUB_WORKSPACE
           }
         shell: pwsh
