@@ -1,0 +1,40 @@
+name: Chocolatey Package Deployment
+
+on:
+  push:
+    paths:
+      - "**/tools/chocolateyInstall.ps1"  # Detect changes in any software folder
+    branches:
+      - main  # Change if using a different branch
+
+jobs:
+  choco_package:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Chocolatey
+        run: choco install chocolatey
+
+      - name: Get Changed Package Folder
+        id: changed-folder
+        run: |
+          $changed_files = git diff-tree --no-commit-id --name-only -r ${{ github.sha }}
+          $package_folders = $changed_files | Where-Object { $_ -match '(.+)/tools/chocolateyInstall.ps1' } | ForEach-Object { $_ -replace '/tools/chocolateyInstall.ps1', '' }
+          echo "PACKAGE_FOLDER=$($package_folders -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: pwsh
+
+      - name: Pack and Push Chocolatey Packages
+        run: |
+          $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
+          foreach ($folder in $folders) {
+            Write-Host "Processing package in: $folder"
+            Set-Location $folder
+            choco pack
+            choco push *.nupkg --source "https://nuget.pkg.github.com/vijaikodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
+            Remove-Item -Path *.nupkg -Force
+            Set-Location ..
+          }
+        shell: pwsh
