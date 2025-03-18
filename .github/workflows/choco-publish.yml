@@ -23,21 +23,36 @@ jobs:
         run: |
           $changed_files = git diff-tree --no-commit-id --name-only -r ${{ github.sha }}
           $package_folders = $changed_files | Where-Object { $_ -match '(.+)/tools/chocolateyInstall.ps1' } | ForEach-Object { ($_ -split '/tools/')[0] }
+          echo "Detected package folders: $package_folders"
           echo "PACKAGE_FOLDER=$($package_folders -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
 
       - name: Pack and Push Chocolatey Packages
         run: |
           $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
+          if ($folders -eq "") {
+            Write-Host "No package folders detected. Exiting."
+            exit 0
+          }
+
           foreach ($folder in $folders) {
-            $nuspecFile = Get-ChildItem "$folder/*.nuspec" -ErrorAction SilentlyContinue
-            if ($nuspecFile -eq $null) {
-              Write-Host "Skipping $folder - No .nuspec file found."
+            $fullPath = "$env:GITHUB_WORKSPACE\$folder"
+            Write-Host "Processing package in: $fullPath"
+
+            # Ensure the folder exists
+            if (!(Test-Path $fullPath)) {
+              Write-Host "Skipping $folder - Directory does not exist."
               continue
             }
 
-            Write-Host "Processing package in: $folder"
-            Set-Location $folder
+            # Find .nuspec file
+            $nuspecFile = Get-ChildItem -Path $fullPath -Filter "*.nuspec" -File -ErrorAction SilentlyContinue
+            if ($nuspecFile -eq $null) {
+              Write-Host "Skipping $folder - No .nuspec file found in $fullPath"
+              continue
+            }
+
+            Set-Location $fullPath
             choco pack $nuspecFile.FullName
             choco push *.nupkg --source "https://nuget.pkg.github.com/vijaikodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
             Remove-Item -Path *.nupkg -Force
