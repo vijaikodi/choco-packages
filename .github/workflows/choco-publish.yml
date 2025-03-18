@@ -22,7 +22,14 @@ jobs:
         id: changed-folder
         run: |
           $changed_files = git diff-tree --no-commit-id --name-only -r ${{ github.sha }}
-          $package_folders = $changed_files | Where-Object { $_ -match '(.+)/tools/chocolateyInstall.ps1' } | ForEach-Object { ($_ -split '/tools/')[0] }
+          $package_folders = $changed_files | Where-Object { $_ -match '^([^/]+)/tools/chocolateyInstall.ps1$' } | ForEach-Object { ($_ -split '/tools/')[0] }
+          
+          if (-not $package_folders) {
+            Write-Host "No changed packages detected. Exiting."
+            echo "PACKAGE_FOLDER=" | Out-File -FilePath $env:GITHUB_ENV -Append
+            exit 0
+          }
+
           echo "Detected package folders: $package_folders"
           echo "PACKAGE_FOLDER=$($package_folders -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
@@ -30,8 +37,8 @@ jobs:
       - name: Pack and Push Chocolatey Packages
         run: |
           $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
-          if ($folders -eq "") {
-            Write-Host "No package folders detected. Exiting."
+          if ($folders -eq "" -or $folders.Length -eq 0) {
+            Write-Host "No package folders detected. Skipping."
             exit 0
           }
 
@@ -54,7 +61,7 @@ jobs:
 
             Set-Location $fullPath
             choco pack $nuspecFile.FullName
-            choco push *.nupkg --source "https://nuget.pkg.github.com/vijaikodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
+            choco push *.nupkg --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
             Remove-Item -Path *.nupkg -Force
             Set-Location $env:GITHUB_WORKSPACE
           }
