@@ -20,7 +20,7 @@ if (Get-32bitOnlyInstalled -product $softwareName) {
 }
 
 $sa = ""
-#test 19032025 iterate5
+#test 19032025 iterate6
 # Command Line Options from the Firefox installer
 # https://firefox-source-docs.mozilla.org/browser/installer/windows/installer/FullConfig.html
 
