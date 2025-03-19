@@ -21,21 +21,22 @@ jobs:
       - name: Get Changed Package Folder
         id: changed-folder
         run: |
-          # Get the latest commit SHA from GitHub Actions
-          git fetch origin
+          git fetch --prune --unshallow
           $commitSha = git rev-parse HEAD
-
-          # Get list of changed files in the latest commit
-          $changedFiles = git diff-tree --no-commit-id --name-only -r $commitSha
-
-          # Extract package folder names where chocolateyInstall.ps1 was modified
-          $packageFolders = $changedFiles | Where-Object { $_ -match '^([^/]+)/tools/chocolateyInstall.ps1$' } | ForEach-Object { ($_ -split '/tools/')[0] }
+      
+          Write-Host "Commit SHA: $commitSha"
+      
+          $changedFiles = git diff --name-only HEAD^ HEAD
+          Write-Host "Changed files: $changedFiles"
+      
+          $packageFolders = $changedFiles | Where-Object { $_ -match '^[^/\\]+[/\\]tools[/\\]chocolateyInstall.ps1$' } | ForEach-Object { ($_ -split '[/\\]tools[/\\]')[0] }
+      
           if (-not $packageFolders) {
               Write-Host "No changed packages detected. Exiting."
               echo "PACKAGE_FOLDER=" | Out-File -FilePath $env:GITHUB_ENV -Append
               exit 0
           }
-          # Output detected package folders
+      
           Write-Host "Detected package folders: $packageFolders"
           echo "PACKAGE_FOLDER=$($packageFolders -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Append
         shell: pwsh
