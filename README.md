@@ -64,19 +64,19 @@ This will trigger the GitHub Actions workflow as long as the chocolateyInstall.p
 ## Environment Variables
 The workflow uses a few environment variables, which you should ensure are set correctly in your GitHub repository's settings:
 
- - APPTOKEN: This is the GitHub API token with the necessary permissions to push packages to GitHub Packages. It should be stored as a GitHub Secret.
- - OWNER: The username or organization name on GitHub that owns the package repository. It is used for authentication and setting up the Chocolatey source.
+ - `APPTOKEN`: This is the GitHub API token with the necessary permissions to push packages to GitHub Packages. It should be stored as a GitHub Secret.
+ - `OWNER`: The username or organization name on GitHub that owns the package repository. It is used for authentication and setting up the Chocolatey source.
 
 ## Modifying the Workflow
 
 If you need to modify the workflow to suit your needs, here are the key parts you might want to change:
 
-   1. Change the trigger: If you want to trigger the workflow on different paths or branches, modify the on.push section.
-   2. Change the Chocolatey source URL: If you're pushing to a different repository or source, you can change the https://nuget.pkg.github.com/vijakodi/index.json URL to your desired source.
-   3. Change package details: If you're using a different way to generate the .nupkg file or need to modify the packaging process, you can edit the Pack and Push Chocolatey Packages step.
+   1. Change the trigger: If you want to trigger the workflow on different paths or branches, modify the `on.push` section.
+   2. Change the Chocolatey source URL: If you're pushing to a different repository or source, you can change the `https://nuget.pkg.github.com/vijakodi/index.json` URL to your desired source.
+   3. Change package details: If you're using a different way to generate the `.nupkg` file or need to modify the packaging process, you can edit the `Pack and Push Chocolatey Packages` step.
 
 ## Conclusion
-This workflow helps automate the process of packaging and pushing Chocolatey packages to GitHub Packages. By simply modifying the chocolateyInstall.ps1 file in any package folder, you can trigger the workflow to create and deploy the updated package.
+This workflow helps automate the process of packaging and pushing Chocolatey packages to GitHub Packages. By simply modifying the `chocolateyInstall.ps1` file in any package folder, you can trigger the workflow to create and deploy the updated package.
 
-For any additional changes or further customization of the workflow, you can modify the choco_package job in the chocolatey_package_deployment.yml file.
+For any additional changes or further customization of the workflow, you can modify the `choco_package` job in the `chocolatey_package_deployment.yml` file.
 
