@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>Firefox</id>
-    <version>136.0.1</version>
+    <version>136.0.2</version>
     <title>Mozilla Firefox</title>
     <authors>Mozilla</authors>
     <owners>chocolatey-community</owners>
