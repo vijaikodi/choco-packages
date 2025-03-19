@@ -48,6 +48,7 @@ jobs:
       - name: Pack and Push Chocolatey Packages
         env:
           CHOCO_API_KEY: ${{ secrets.APPTOKEN }}  # Store the API key in an environment variable
+          OWNER: vijaikodi
         run: |
           if (-not $env:CHOCO_API_KEY) {
               Write-Host "Error: No API key found."
@@ -88,11 +89,20 @@ jobs:
               }
 
               Write-Host "Pushing package: $packageFile"
-              choco apikey add --source="https://nuget.pkg.github.com/vijakodi/index.json" --key="$env:CHOCO_API_KEY" --force
-              choco push $packageFile --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key="$env:CHOCO_API_KEY"
+
+              # Add Chocolatey source with GitHub authentication
+              choco source add --name=github --source="https://nuget.pkg.github.com/$env:OWNER/index.json" --user="$env:OWNER" --password="$env:CHOCO_API_KEY" --force
+
+              # Add API Key correctly for Chocolatey push
+              choco apikey add --source="https://nuget.pkg.github.com/$env:OWNER/index.json" --key="$env:CHOCO_API_KEY" --force
+
+              # Push using the correct GitHub Packages format
+              choco push $packageFile --source "https://nuget.pkg.github.com/$env:OWNER/index.json" --api-key="$env:CHOCO_API_KEY"
 
               # Clean up the .nupkg file
               Remove-Item -Path $packageFile -Force
               Set-Location $env:GITHUB_WORKSPACE
           }
         shell: pwsh
+
+
