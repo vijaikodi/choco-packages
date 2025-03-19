@@ -7,6 +7,10 @@ on:
     branches:
       - main  # Change if using a different branch
 
+permissions:
+  packages: write  # Allows pushing Chocolatey packages to GitHub Packages
+  contents: read   # Allows reading repository contents
+
 jobs:
   choco_package:
     runs-on: windows-latest
