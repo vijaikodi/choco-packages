@@ -43,7 +43,12 @@ jobs:
 
       - name: Pack and Push Chocolatey Packages
         run: |
-          $folders = "firefox" -split ' '
+          $apiKey = ${{ secrets.APPTOKEN }}
+          if (-not $apiKey) {
+              Write-Host "Error: No API key found."
+              exit 1
+          }
+          $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
           if ($folders -eq "" -or $folders.Length -eq 0) {
               Write-Host "No package folders detected. Skipping."
               exit 0
@@ -81,7 +86,8 @@ jobs:
               }
               
               Write-Host "Pushing package: $packageFile"
-              choco push $packageFile --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key "${{ secrets.APPTOKEN }}"
+              choco apikey add --source="https://nuget.pkg.github.com/vijakodi/index.json" --key="$apiKey" --force
+              choco push $packageFile --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key "$apikey"
               
               # Clean up the .nupkg file
               Remove-Item -Path $packageFile -Force
