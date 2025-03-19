@@ -42,12 +42,14 @@ jobs:
         shell: pwsh
 
       - name: Pack and Push Chocolatey Packages
+        env:
+          CHOCO_API_KEY: ${{ secrets.APPTOKEN }}  # Store the API key in an environment variable
         run: |
-          $apiKey = ${{ secrets.APPTOKEN }}
-          if (-not $apiKey) {
+          if (-not $env:CHOCO_API_KEY) {
               Write-Host "Error: No API key found."
               exit 1
           }
+
           $folders = "${{ env.PACKAGE_FOLDER }}" -split ' '
           if ($folders -eq "" -or $folders.Length -eq 0) {
               Write-Host "No package folders detected. Skipping."
@@ -72,23 +74,19 @@ jobs:
 
               Set-Location $fullPath
               Write-Host "Packing Chocolatey package..."
-              $packageFile = choco pack $nuspecFile.FullName | Select-String -Pattern "Successfully created package '(.+\.nupkg)'" | ForEach-Object { $_.Matches.Groups[1].Value }
+              choco pack $nuspecFile.FullName
 
+              # Find the newly created .nupkg file
+              $packageFile = Get-ChildItem -Path $fullPath -Filter "*.nupkg" -File -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName
               if (-not $packageFile) {
                   Write-Host "Error: No .nupkg file was created."
                   exit 1
               }
 
-              # Ensure package file exists before pushing
-              if (!(Test-Path $packageFile)) {
-                  Write-Host "Error: The .nupkg file was not found after packing."
-                  exit 1
-              }
-              
               Write-Host "Pushing package: $packageFile"
-              choco apikey add --source="https://nuget.pkg.github.com/vijakodi/index.json" --key="$apiKey" --force
-              choco push $packageFile --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key "$apikey"
-              
+              choco apikey add --source="https://nuget.pkg.github.com/vijakodi/index.json" --key="$env:CHOCO_API_KEY" --force
+              choco push $packageFile --source "https://nuget.pkg.github.com/vijakodi/index.json" --api-key="$env:CHOCO_API_KEY"
+
               # Clean up the .nupkg file
               Remove-Item -Path $packageFile -Force
               Set-Location $env:GITHUB_WORKSPACE
